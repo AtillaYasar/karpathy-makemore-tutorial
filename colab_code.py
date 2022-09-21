@@ -86,9 +86,19 @@ hidden_dimension = 300
 model_params = {'context_size':context_size,
                 'embedding_dimension':embedding_dimension,
                 'hidden_dimension':hidden_dimension}
+
 # initialize weights
 C, W1, b1, W2, b2 = get_parameters(**model_params)
 parameters = [C, W1, b1, W2, b2]
+
+# training parameters
+total_iterations = 50000
+batch_size = 50
+lrs = [0.1, 0.01, 0.001]
+thresholds = list(map(lambda fl:int(round(fl, 0)), [((n+1)/len(lrs))*total_iterations for n in range(len(lrs))]))
+training_params = {'total_iterations':total_iterations,
+                   'batch_size':batch_size,
+                   'learning rates':f'lrs: {lrs}, thresholds: {thresholds}'}
 
 # building the training, dev and test datasets. 80/10/10 split.
 random.seed(42)
@@ -100,23 +110,14 @@ Xtr, Ytr = build_dataset(words[:n1], context_size)
 Xdev, Ydev = build_dataset(words[n1:n2], context_size)
 Xte, Yte = build_dataset(words[n2:], context_size)
 
-# training parameters
-total_iterations = 10000
-batch_size = 50
-lrs = [0.1, 0.01, 0.001]
-thresholds = list(map(lambda fl:int(round(fl, 0)), [((n+1)/len(lrs))*total_iterations for n in range(len(lrs))]))
-
+# janky way of adjusting the learning rate
 def get_lr(lrs, thresholds, i):
   for n, t in enumerate(thresholds):
     if i < t:
       return lrs[n]
 
-training_params = {'total_iterations':total_iterations,
-                   'batch_size':batch_size,
-                   'learning rates':f'lrs: {lrs}, thresholds: {thresholds}'}
-
 # for tracking stats
-track_frequency = 100
+track_frequency = 1000
 track_every = total_iterations//track_frequency
 stats = {
          'model_params': model_params,
@@ -179,4 +180,12 @@ stats['dev loss'] = loss.item()
 
 print(f'dev loss: {stats["dev loss"]}')
 toJson(stats, str(time.time()).partition('.')[0], overwrite=0)
+# ------------------------------------------------------------------
+
+# ------------------------------------------------------------------
+# plotting stuff
+steps = list(stats['losses'].keys())
+losses = [d['loss'] for d in stats['losses'].values()]
+lrs_used = [d['lr'] for d in stats['losses'].values()]
+plt.plot(steps, losses)
 # ------------------------------------------------------------------
