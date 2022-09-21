@@ -365,3 +365,32 @@ if 0:
 else:
   plt.plot(range(len(losses)), losses)
 # ------------------------------------------------------------------
+# ------------------------------------------------------------------
+# sampling from the model
+# first encode inputs, then embed them, then send them to the hidden layer, then to the final layer, then normalize logits and sample from them
+def predict(context):
+  ix = list(map(lambda s:stoi[s], list(context)))
+
+  emb = C[ix]
+  h = torch.tanh(emb.view(-1, context_size*embedding_dimension) @ W1 + b1)
+  logits = h @ W2 + b2
+  counts = logits.exp()
+  probs = counts / counts.sum(1, keepdims=True)
+
+  choice = torch.multinomial(probs, num_samples=1, replacement=True).item()
+  return itos[choice]
+
+def makeName():
+  context = '.'*context_size
+  while True:
+    prediction = predict(context)
+    
+    if prediction == '.':
+      return context
+      break
+    else:
+      context = context[1:] + prediction
+
+for i in range(20):
+  print(makeName())
+# ------------------------------------------------------------------
