@@ -189,14 +189,21 @@ def explore_hyperparameters(params, string, frm, to, step_size):
         
         params[string] += step_size
     
-    print('++++++++++++++++++++++++++++++++')
     frozen =  {k:v for k,v in params.items() if k != string}
-    print(f'frozen parameters:\n{dString(frozen)}')
-    print(f'\niterated on {string} between {frm}-{to}')
-    
     ranked = sorted(results, key=lambda d:d['dev loss'])
-    print(f'best one was {ranked[0]["params"][string]}')
-    print(f'\nfuller results:')
+    
+    print('++++++++++++++++++++++++++++++++')
+    print(f'''
+frozen parameters:
+{dString(frozen)}
+
+iterated on:
+{string} between {frm}-{to}
+best one was {ranked[0]["params"][string]}
+
+fuller results:
+'''[1:-1])
+    
     for d in ranked:
         print(dString(d))
     print('++++++++++++++++++++++++++++++++')
