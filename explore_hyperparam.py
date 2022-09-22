@@ -175,6 +175,10 @@ def train(params):
     return {'dev loss':devLoss, 'training loss':trLoss, 'training time':stats['training time'], 'params':params}
 
 def explore_hyperparameters(params, string, frm, to, step_size):
+    # for better dictionary printing
+    def dString(d):
+        return ', '.join([f'{str(k)}:{str(v)}' for k,v in d.items()])
+    
     params[string] = frm
     results = []
     
@@ -185,18 +189,24 @@ def explore_hyperparameters(params, string, frm, to, step_size):
         
         params[string] += step_size
     
-    ranked = sorted(results, key=lambda d:d['dev loss'])
     print('++++++++++++++++++++++++++++++++')
-    print(f'best {string} between {frm}-{to} = {ranked[0]["params"][string]}')
+    frozen =  {k:v for k,v in params.items() if k != string}
+    print(f'frozen parameters:\n{dString(frozen)}')
+    print(f'\niterated on {string} between {frm}-{to}')
+    
+    ranked = sorted(results, key=lambda d:d['dev loss'])
+    print(f'best one was {ranked[0]["params"][string]}')
+    print(f'\nfuller results:')
     for d in ranked:
-        print(d)
+        print(dString(d))
     print('++++++++++++++++++++++++++++++++')
 
 params = {
     'context_size':3,
     'embedding_dimension':6,
     'hidden_dimension':300,
-    'total_iterations':20000,
+    'total_iterations':1000,
     'batch_size':0
 }
 explore_hyperparameters(params, 'batch_size', 50, 200, 50)
+# ------------------------------------------------------------------
