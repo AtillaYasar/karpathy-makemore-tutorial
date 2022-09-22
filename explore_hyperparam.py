@@ -187,6 +187,7 @@ def explore_hyperparameters(params, string, frm, to, step_size):
     
     ranked = sorted(results, key=lambda d:d['dev loss'])
     print('++++++++++++++++++++++++++++++++')
+    print(f'best {string} between {frm}-{to} = {ranked[0]["params"][string]}')
     for d in ranked:
         print(d)
     print('++++++++++++++++++++++++++++++++')
