@@ -1,4 +1,4 @@
-# note: incomplete. this is just a convenient place to store things. requires a specific type of json files, and a gpt2 vocabulary
+# note: incomplete and doesn't work correctly. this is just a convenient place to store things. requires a specific type of json files, and a gpt2 vocabulary
 
 debug = False
 logit_amount = 3
