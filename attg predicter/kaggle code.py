@@ -1,5 +1,3 @@
-# note: incomplete and doesn't work correctly. this is just a convenient place to store things. requires a specific type of json files, and a gpt2 vocabulary
-
 debug = False
 logit_amount = 3
 context_length = 10
@@ -20,7 +18,7 @@ def decode(ids):
 def decode_array(arr):
     converted = []
     for pos, logit in enumerate(np.nditer(arr)):
-        if logit != 0:
+        if float(logit) != 0.0:
             converted.append((from_position[pos], my_vocab[from_position[pos]], float(logit)))
     return converted
 
@@ -58,9 +56,8 @@ def examples_from_sequence(sequence):
     end_token = my_vocab_reverse['<end>']
     
     context = [my_vocab_reverse['<padding>']]*context_length
-    for token_id in [start_token, *sequence, end_token]:
-        nxt = token_id
-        context = context[1:] + [nxt]
+    for token_id in [*sequence, end_token]:
+        context = context[1:] + [token_id]
         padded_Xs.append(copy.deepcopy(context))
     
     return padded_Xs
@@ -131,6 +128,6 @@ for i in range(json_amount):
 for seq,pred in zip(Xs, Ys):
     print(seq)
     print(my_decode(seq))
-    for a,b in zip(pred, decode_array(pred)):
-        print(a,b)
+    for a,b in zip([p for p in pred if float(p) != 0.0], decode_array(pred)):
+        print(b)
     print('------------------------------')
