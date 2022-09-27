@@ -1,9 +1,10 @@
+import os, json, copy, time
+import numpy as np
+
+onKaggle = 1
 debug = False
 logit_amount = 3
 context_length = 10
-
-import os, json, copy, time
-import numpy as np
 
 def openListFile(filename):
     with open(filename, "r") as f:
@@ -48,19 +49,28 @@ def make_vocab_subset(dictionaries, prompts):
                 my_vocab[chosen_id] = decode(chosen_id)
     return my_vocab
 
-def examples_from_sequence(sequence):
-    available = list(my_vocab.keys())
-    padded_Xs = []
+def rolling_window(sequence, length):
+    subsets = []
     
+    subset = sequence[:length]
+    subsets.append(subset)
+    for item in sequence[length:]:
+        subset = subset[1:] + [item]
+        subsets.append(subset)
+    
+    return subsets
+
+def examples_from_sequence(sequence):    
     start_token = my_vocab_reverse['<start>']
     end_token = my_vocab_reverse['<end>']
+    padding_token = my_vocab_reverse['<padding>']
     
-    context = [my_vocab_reverse['<padding>']]*context_length
-    for token_id in [*sequence, end_token]:
-        context = context[1:] + [token_id]
-        padded_Xs.append(copy.deepcopy(context))
-    
-    return padded_Xs
+    full = [padding_token]*(context_length-2) + [start_token] + [*sequence]
+    res = rolling_window(full, context_length)
+    #print(f'full: {full}')
+    #print(f'res: {res}')
+    return res
+
 # prompts have negative indices.
 def make_examples(logprobs, prompt):
     xs = []
@@ -70,6 +80,7 @@ def make_examples(logprobs, prompt):
     
     sequence = [my_vocab_reverse[prompt]]
     for generation in logprobs:
+        # make logits array
         logits = np.zeros((len(my_vocab),1), dtype=np.float32)
         for alt_token in generation['before'][:logit_amount]:
             alt_id = alt_token[0][0]
@@ -79,20 +90,28 @@ def make_examples(logprobs, prompt):
         
         chosen_id = generation['chosen'][0][0][0]
         if chosen_id not in available:
-            print(f'{chosen_id} was added but it\'s not in vocab')
-            raise SystemExit("Exit from script")
-            
+            error_message = f'{chosen_id} was added but it\'s not in vocab'
+            if onKaggle:
+                raise SystemExit(error_message)
+            else:
+                exit(error_message)
         sequence.append(copy.deepcopy(chosen_id))
+        
         if debug:
             print(f'last chosen was: {generation["chosen"][0][0][0]}')
-    xs += examples_from_sequence(sequence)
+            
+    xs += examples_from_sequence(sequence[:-1])
 
     if len(xs) != len(ys):
-        exit('unequal length')
+        error_message = f'cause: unequal length ({len(xs)},{len(ys)})\nxs:{xs}\nys:{ys}'
+        if onKaggle:
+            raise SystemExit(error_message)
+        else:
+            exit(error_message)
+        
     return xs, ys
 
 # load things
-onKaggle = 1
 if onKaggle:
     gpt2_vocab = openListFile('/kaggle/input/gpt2-tokens/gpt2 tokens')
     data_folder = '/kaggle/input/jsons'
