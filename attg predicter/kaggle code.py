@@ -5,6 +5,7 @@ onKaggle = 1
 debug = False
 logit_amount = 3
 context_length = 10
+json_amount = 10
 
 def openListFile(filename):
     with open(filename, "r") as f:
@@ -81,11 +82,14 @@ def make_examples(logprobs, prompt):
     sequence = [my_vocab_reverse[prompt]]
     for generation in logprobs:
         # make logits array
-        logits = np.zeros((len(my_vocab),1), dtype=np.float32)
+        logits = np.zeros((len(my_vocab)), dtype=np.float32)
         for alt_token in generation['before'][:logit_amount]:
             alt_id = alt_token[0][0]
             logit = alt_token[1][0]
             logits[to_position[alt_id]] = copy.deepcopy(logit)
+        # normalize and add to ys
+        #logits = np.exp(logits)
+        #logits /= np.sum(logits)
         ys.append(copy.deepcopy(logits))
         
         chosen_id = generation['chosen'][0][0][0]
@@ -120,7 +124,6 @@ else:
     data_folder = os.getcwd()
     
 # gathering the logprobs
-json_amount = 5
 names = [f'{data_folder}/{f}' for f in os.listdir(data_folder) if 'raw' in f][:json_amount]
 jsons = []
 prompts = []
@@ -145,8 +148,16 @@ for i in range(json_amount):
     Xs += copy.deepcopy(xs)
     Ys += copy.deepcopy(ys)
 for seq,pred in zip(Xs, Ys):
+    break
     print(seq)
     print(my_decode(seq))
     for a,b in zip([p for p in pred if float(p) != 0.0], decode_array(pred)):
         print(b)
     print('------------------------------')
+# hotfix
+newXs = []
+for seq in Xs:
+    newXs.append([to_position[i] for i in seq])
+Xs = newXs
+oldXs = Xs
+oldYs = Ys
